@@ -1,0 +1,202 @@
+
+#define _CRT_SECURE_NO_WARNINGS
+
+#include <stdio.h>
+#include <malloc.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define LINESIZE 128
+
+typedef struct Car Car;
+typedef struct Node Node;
+
+struct Car {
+	int year;
+	char* manufacturer;
+	float cc;
+};
+
+struct Node {
+	Car car;
+	Node* next;
+};
+
+void insertAtMiddle(Node** start, Car car) {
+	Node* newNode = malloc(sizeof(Node));
+
+	newNode->car = car;
+
+	Node* slow = *start;
+	Node* fast = *start;
+
+	while (fast != NULL && fast->next != NULL) {
+		fast = fast->next->next;
+		slow = slow->next;
+	}
+
+	newNode->next = slow->next;
+	slow->next = newNode;
+
+
+
+}
+
+void insertAtBeginning(Node** start, Car car) {
+
+	Node* newNode = malloc(sizeof(Node));
+
+	newNode->car = car;
+	newNode->next = *start;
+
+	*start = newNode;
+}
+
+void insertAtEnd(Node** start, Car car) {
+
+	Node* newNode = malloc(sizeof(Node));
+	newNode->car = car;
+	newNode->next = NULL;
+
+	if (*start) {
+
+		Node* aux = *start;
+
+		while (aux->next) {
+			aux = aux->next;
+		}
+
+		aux->next = newNode;
+
+	}
+	else {
+		*start = newNode;
+	}
+}
+
+Car deleteFromBeginning(Node** start) {
+
+	Node* deleted = *start;
+	*start = (*start)->next;
+
+	Car deletedCar = deleted->car;
+	free(deleted);
+
+	return deletedCar;
+}
+
+Car deleteFromEnd(Node** start) {
+
+	Node* current = *start;
+	while (current->next != NULL && current->next->next != NULL) {
+		current = current->next;
+	}
+
+	Node* deleted = current->next;
+	current->next = NULL;
+
+	Car deletedCar = deleted->car;
+	free(deleted->car.manufacturer);
+	free(deleted);
+
+	return deletedCar;
+
+}
+
+
+void printCar(Car car) {
+	printf("%s from %d has %5.2f\n", car.manufacturer, car.year, car.cc);
+}
+
+void parseListAndPrint(Node* start) {
+	while (start) {
+		printCar(start->car);
+		start = start->next;
+	}
+}
+
+Car readCarFromFile(FILE* f) {
+
+	char buffer[LINESIZE];
+
+	fgets(buffer, LINESIZE, f);
+
+	Car car;
+
+	char* carData = NULL;
+
+	carData = strtok(buffer, ",");
+	car.year = atoi(carData);
+
+	carData = strtok(NULL, ",");
+	car.manufacturer = malloc((strlen(carData) + 1) * sizeof(char));
+	strcpy(car.manufacturer, carData);
+
+	carData = strtok(NULL, ",");
+	car.cc = atof(carData);
+
+	return car;
+
+}
+
+void readCarsFromFile(Node** start, int* noCars, const char* fileName) {
+
+	FILE* f;
+	f = fopen(fileName, "r");
+
+	char buffer[LINESIZE];
+	fgets(buffer, LINESIZE, f);
+
+	*noCars = (int)strtol(buffer, NULL, 10);
+
+	for (int i = 0; i < (*noCars); i++) {
+		insertAtEnd(start, readCarFromFile(f));
+	}
+
+	fclose(f);
+
+}
+
+int main() {
+
+	int noCars = 0;
+	Node* list = NULL;
+
+	readCarsFromFile(&list, &noCars, "cars.txt");
+	parseListAndPrint(list);
+
+	printf("-------------------\n");
+
+	Car newCar;
+	newCar.year = 2023;
+	newCar.manufacturer = malloc(6 * sizeof(char));
+	strcpy(newCar.manufacturer, "Audi");
+	newCar.cc = 2000.0f;
+
+	insertAtMiddle(&list, newCar);
+	parseListAndPrint(list);
+
+	printf("---------------------------\n");
+
+	Car deletedCar = deleteFromBeginning(&list);
+
+	parseListAndPrint(list);
+
+	printf("-------------------\n");
+
+	Car deletedCar1 = deleteFromEnd(&list);
+	if (deletedCar1.manufacturer != NULL) {
+		printf("Masina stearsa: ");
+		printCar(deletedCar1);
+	}
+
+
+	printf("-------------------\n");
+	parseListAndPrint(list);
+
+
+	printCar(deletedCar);
+	free(deletedCar.manufacturer);
+
+	return 0;
+}
